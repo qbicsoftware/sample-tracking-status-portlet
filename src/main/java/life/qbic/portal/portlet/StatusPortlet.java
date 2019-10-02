@@ -5,6 +5,7 @@ import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Widgetset;
 import com.vaadin.data.Item;
 import com.vaadin.data.sort.Sort;
+import com.vaadin.server.Page;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.ui.*;
@@ -79,7 +80,7 @@ public class StatusPortlet extends QBiCPortletUI {
         idField.setValue("QABCD001A0");
 
         idField.setWidth("20%");
-        Button trackButton = new Button("Track");
+        Button trackButton = new Button("Find sample");
         trackButton.setWidth("20%");
 
         Grid logTable = new Grid("Location log:");
@@ -175,7 +176,15 @@ public class StatusPortlet extends QBiCPortletUI {
                     } catch (Exception E) { //IOException
 
                         System.out.println("api exception********");
-                        Notification.show("Invalid QBiC ID");
+                        //Notification.show("Invalid QBiC ID");
+                        //Notification.show("Invalid QBiC ID", Notification.TYPE_ERROR_MESSAGE);
+
+                        /////////////////
+                        Notification notif = new Notification("Invalid QBiC ID","", Notification.TYPE_ERROR_MESSAGE);
+                        notif.setDelayMsec(20000);
+                        notif.setPosition(Notification.POSITION_CENTERED_TOP);
+                        notif.show(Page.getCurrent());
+
                     }
 
                 }
