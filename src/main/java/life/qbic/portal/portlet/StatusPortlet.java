@@ -3,37 +3,82 @@ package life.qbic.portal.portlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Widgetset;
+
+
 import com.vaadin.data.Item;
 import com.vaadin.data.sort.Sort;
+
 import com.vaadin.server.Page;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.ui.*;
 
 import com.vaadin.ui.renderers.DateRenderer;
-import life.qbic.datamodel.services.Contact;
-import life.qbic.datamodel.services.Location;
-import life.qbic.datamodel.services.Status;
-import life.qbic.datamodel.services.Sample;
+
+import life.qbic.datamodel.samples.Location;
+import life.qbic.datamodel.samples.Status;
+import life.qbic.datamodel.samples.Sample;
+import life.qbic.datamodel.samples.SampleSummary;
+import life.qbic.datamodel.people.Contact;
+
+
+
+
+//import life.qbic.datamodel.services.Contact;
+//import life.qbic.datamodel.services.Location;
+//import life.qbic.datamodel.services.Status;
+//import life.qbic.datamodel.services.Sample;
+
+
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.AuthCache;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.BasicAuthCache;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import org.apache.commons.codec.binary.Base64;
+import java.nio.charset.StandardCharsets;
+
+
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.ArrayList;
 
 import java.text.SimpleDateFormat;
+
+///////////////////////////////
+
+import life.qbic.portal.utils.ConfigurationManagerFactory;
+import life.qbic.portal.utils.ConfigurationManager;
+import life.qbic.services.ConsulServiceFactory;
+import life.qbic.services.Service;
+import life.qbic.services.ServiceConnector;
+import life.qbic.services.ServiceType;
+import life.qbic.services.connectors.ConsulConnector;
+
+import life.qbic.datamodel.services.ServiceUser;
+
+
 
 
 /**
@@ -48,9 +93,49 @@ public class StatusPortlet extends QBiCPortletUI {
 
     private static final Logger LOG = LogManager.getLogger(StatusPortlet.class);
 
+    private static List<Service> serviceList;
+
+    private static ServiceUser httpUser;
+
     @Override
     protected Layout getPortletContent(final VaadinRequest request) {
         LOG.info("Generating content for {}", StatusPortlet.class);
+
+        /////////////
+        //set service factory
+
+        ConfigurationManager confManager = ConfigurationManagerFactory.getInstance();
+        URL serviceURL = null;
+
+        //System.out.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ " + confManager.getServicesRegistryUrl());
+        //System.out.println("-----> " + confManager.getServiceUser().name);
+        //System.out.println("-----> " + confManager.getServiceUser().password);
+
+        httpUser = confManager.getServiceUser();
+
+
+        try {
+            serviceURL = new URL(confManager.getServicesRegistryUrl());
+
+            serviceList = new ArrayList<Service>();
+            ServiceConnector connector = new ConsulConnector(serviceURL);
+            ConsulServiceFactory factory = new ConsulServiceFactory(connector);
+            serviceList.addAll(factory.getServicesOfType(ServiceType.SAMPLE_TRACKING));
+
+//            System.out.println("++++++++++++++++++++++++++++++++++");
+//            System.out.println(serviceList.get(0).getRootUrl().toString());
+//            System.out.println(serviceList.get(0).getRootUrl().getPath());
+//            System.out.println(serviceList.get(0).getRootUrl().getHost());
+//            System.out.println(serviceList.get(0).getRootUrl().getPort());
+//            System.out.println("++++++++++++++++++++++++++++++++++");
+
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+
+
+        ////////////
 
         final HorizontalLayout mainLayout = new HorizontalLayout();
         mainLayout.setSpacing(true);
@@ -125,16 +210,31 @@ public class StatusPortlet extends QBiCPortletUI {
 
                     try {
 
+                        //String baseURL = "http://services.qbic.uni-tuebingen.de:8080/sampletrackingservice/";
+                        String baseURL = serviceList.get(0).getRootUrl().toString() + "/";
+
+                        ////////////////////////////
+                        //auth
 
 
-                        String baseURL = "http://services.qbic.uni-tuebingen.de:8080/sampletrackingservice/";
+                        byte[] credentials = Base64.encodeBase64((httpUser.name + ":" + httpUser.password).getBytes(StandardCharsets.UTF_8));
+                        String authHeader = "Basic " + new String(credentials, StandardCharsets.UTF_8);
+
+
+                        ///////////////////////////
 
                         HttpClient client = HttpClientBuilder.create().build();
 
                         String sampleId = idField.getValue();
 
+                        //System.out.println("--->url: " + baseURL + "samples/" + sampleId);
+
                         HttpGet getSampleInfo = new HttpGet(baseURL + "samples/" + sampleId);
+                        getSampleInfo.setHeader("Authorization", authHeader);
                         HttpResponse response = client.execute(getSampleInfo);
+
+                        //System.out.println("--->statusCode: " + String.valueOf(response.getStatusLine().getStatusCode()));
+
 
                         ObjectMapper mapper = new ObjectMapper();
                         Sample sample = mapper.readValue(response.getEntity().getContent(), Sample.class);
@@ -175,12 +275,14 @@ public class StatusPortlet extends QBiCPortletUI {
 
                     } catch (Exception E) { //IOException
 
-                        System.out.println("api exception********");
+                        System.out.println("API error********");
+                        E.printStackTrace();
                         //Notification.show("Invalid QBiC ID");
                         //Notification.show("Invalid QBiC ID", Notification.TYPE_ERROR_MESSAGE);
 
                         /////////////////
-                        Notification notif = new Notification("Invalid QBiC ID","", Notification.TYPE_ERROR_MESSAGE);
+                        //Notification notif = new Notification("Invalid QBiC ID","", Notification.TYPE_ERROR_MESSAGE);
+                        Notification notif = new Notification("Error","", Notification.TYPE_ERROR_MESSAGE);
                         notif.setDelayMsec(20000);
                         notif.setPosition(Notification.POSITION_CENTERED_TOP);
                         notif.show(Page.getCurrent());
