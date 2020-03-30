@@ -183,8 +183,8 @@ public class StatusPortlet extends QBiCPortletUI {
 
         //logTable.addColumn("Date", Date.class);
 
-        logTable.addColumn("Date", Date.class);
-        logTable.getColumn("Date").setRenderer(new DateRenderer(new SimpleDateFormat("dd.MM.yyyy")));
+        logTable.addColumn("Date/Time", Date.class);
+        logTable.getColumn("Date/Time").setRenderer(new DateRenderer(new SimpleDateFormat("dd.MM.yyyy '/' HH:mm")));
         logTable.addColumn("Place", String.class);
         logTable.addColumn("Status", String.class);
         logTable.addColumn("Responsible Person", String.class);
@@ -248,13 +248,19 @@ public class StatusPortlet extends QBiCPortletUI {
                             throw new Exception("Invalid ID");
                         }
 
+                        if(response.getStatusLine().getStatusCode() == 404){
+                            throw new Exception("ID not found in tracking database");
+                        }
+
                         ////////////////////////////////////////////////////////
 
                         ObjectMapper mapper = new ObjectMapper();
                         Sample sample = mapper.readValue(response.getEntity().getContent(), Sample.class);
                         //System.out.println(sample);
 
-                        Date date = new SimpleDateFormat("yyyy-MM-dd").parse(sample.getCurrentLocation().getArrivalDate().substring(0, 10));
+                        //Date date = new SimpleDateFormat("yyyy-MM-dd").parse(sample.getCurrentLocation().getArrivalDate().substring(0, 10));
+                        Date date = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'").parse(sample.getCurrentLocation().getArrivalDate());
+
 
                         //logTable.addRow(sample.getCurrentLocation().getArrivalDate().substring(0, 10),
                         logTable.addRow(date,
@@ -272,7 +278,8 @@ public class StatusPortlet extends QBiCPortletUI {
 
                             for(Location pastLoc: pastLocationList){
 
-                                date = new SimpleDateFormat("yyyy-MM-dd").parse(pastLoc.getArrivalDate().substring(0, 10));
+                                //date = new SimpleDateFormat("yyyy-MM-dd").parse(pastLoc.getArrivalDate().substring(0, 10));
+                                date = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'").parse(pastLoc.getArrivalDate());
 
                                 //logTable.addRow(pastLoc.getArrivalDate().substring(0, 10),
                                 logTable.addRow(date,
@@ -285,7 +292,7 @@ public class StatusPortlet extends QBiCPortletUI {
                         }
 
 
-                        logTable.sort(Sort.by("Date", SortDirection.DESCENDING));
+                        logTable.sort(Sort.by("Date/Time", SortDirection.DESCENDING));
 
                     } catch (Exception E) { //IOException
 
