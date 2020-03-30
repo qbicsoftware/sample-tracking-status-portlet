@@ -111,13 +111,15 @@ public class StatusPortlet extends QBiCPortletUI {
         //System.out.println("-----> " + confManager.getServiceUser().name);
         //System.out.println("-----> " + confManager.getServiceUser().password);
 
+        serviceList = new ArrayList<Service>();
+
         httpUser = confManager.getServiceUser();
 
 
         try {
             serviceURL = new URL(confManager.getServicesRegistryUrl());
 
-            serviceList = new ArrayList<Service>();
+
             ServiceConnector connector = new ConsulConnector(serviceURL);
             ConsulServiceFactory factory = new ConsulServiceFactory(connector);
             serviceList.addAll(factory.getServicesOfType(ServiceType.SAMPLE_TRACKING));
@@ -131,7 +133,12 @@ public class StatusPortlet extends QBiCPortletUI {
 
 
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
+
+            Notification notif = new Notification("Error: Backend connection failure","", Notification.TYPE_ERROR_MESSAGE);
+            notif.setDelayMsec(20000);
+            notif.setPosition(Notification.POSITION_CENTERED_TOP);
+            notif.show(Page.getCurrent());
         }
 
 
@@ -211,15 +218,17 @@ public class StatusPortlet extends QBiCPortletUI {
                     try {
 
                         //String baseURL = "http://services.qbic.uni-tuebingen.de:8080/sampletrackingservice/";
+                        if(serviceList.size() == 0){
+                            throw new Exception("No available backend services");
+                        }
+
                         String baseURL = serviceList.get(0).getRootUrl().toString() + "/";
 
                         ////////////////////////////
                         //auth
 
-
                         byte[] credentials = Base64.encodeBase64((httpUser.name + ":" + httpUser.password).getBytes(StandardCharsets.UTF_8));
                         String authHeader = "Basic " + new String(credentials, StandardCharsets.UTF_8);
-
 
                         ///////////////////////////
 
@@ -235,6 +244,11 @@ public class StatusPortlet extends QBiCPortletUI {
 
                         //System.out.println("--->statusCode: " + String.valueOf(response.getStatusLine().getStatusCode()));
 
+                        if(response.getStatusLine().getStatusCode() == 400){
+                            throw new Exception("Invalid ID");
+                        }
+
+                        ////////////////////////////////////////////////////////
 
                         ObjectMapper mapper = new ObjectMapper();
                         Sample sample = mapper.readValue(response.getEntity().getContent(), Sample.class);
@@ -275,14 +289,11 @@ public class StatusPortlet extends QBiCPortletUI {
 
                     } catch (Exception E) { //IOException
 
-                        System.out.println("API error********");
-                        E.printStackTrace();
-                        //Notification.show("Invalid QBiC ID");
-                        //Notification.show("Invalid QBiC ID", Notification.TYPE_ERROR_MESSAGE);
+                        //System.out.println("error********");
+                        //E.printStackTrace();
 
                         /////////////////
-                        //Notification notif = new Notification("Invalid QBiC ID","", Notification.TYPE_ERROR_MESSAGE);
-                        Notification notif = new Notification("Error","", Notification.TYPE_ERROR_MESSAGE);
+                        Notification notif = new Notification("Error: " + E.getMessage(),"", Notification.TYPE_ERROR_MESSAGE);
                         notif.setDelayMsec(20000);
                         notif.setPosition(Notification.POSITION_CENTERED_TOP);
                         notif.show(Page.getCurrent());
@@ -297,6 +308,7 @@ public class StatusPortlet extends QBiCPortletUI {
         return queryPanel;
     }
 
+    //for API testing, disregard
     private void testAPIRequest() {    // base url of our service. maybe this should be in a config
 
         try{
@@ -307,11 +319,11 @@ public class StatusPortlet extends QBiCPortletUI {
             HttpClient client = HttpClientBuilder.create().build();
 
             String sampleId = "QABCD004AO";
-// define GET request using the respective endpoint
+            // define GET request using the respective endpoint
             HttpGet getSampleInfo = new HttpGet(baseURL + "samples/" + sampleId);
             HttpResponse response = client.execute(getSampleInfo);
-// jackson databind uses data-model-lib classes to translate the http response object to this
-// class
+            // jackson databind uses data-model-lib classes to translate the http response object to this
+            // class
             ObjectMapper mapper = new ObjectMapper();
             Sample sample = mapper.readValue(response.getEntity().getContent(), Sample.class);
             System.out.println(sample);
