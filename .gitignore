@@ -1,3 +1,6 @@
+src/main/resources/developer.properties
+src/main/resources/developer.properties.example
+
 # Eclipse
 .classpath
 .project
