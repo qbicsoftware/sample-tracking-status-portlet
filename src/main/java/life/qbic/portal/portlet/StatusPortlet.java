@@ -126,6 +126,22 @@ public class StatusPortlet extends QBiCPortletUI {
 
   }
 
+  private boolean userIsAuthorized(String sampleCode) {
+    List<ch.systemsx.cisd.openbis.generic.shared.api.v1.dto.Sample> samples =
+        openbis.getParentsBySearchService(sampleCode);
+    if (samples.isEmpty()) {
+      LOG.error(
+          "User tried searching for " + sampleCode + ", but sample does not exist in openBIS");
+      return false;
+    }
+    if (!spaces.contains(samples.get(0).getSpaceCode())) {
+      LOG.error("User tried searching for " + sampleCode
+          + ", but user is not allowed to view this project.");
+      return false;
+    }
+    return true;
+  }
+
   private Panel getQueryInterface() {
 
     Panel queryPanel = new Panel("qTracker: sample status check");
@@ -194,11 +210,7 @@ public class StatusPortlet extends QBiCPortletUI {
             String baseURL = serviceList.get(0).getRootUrl().toString() + "/";
 
             // test if user is allowed to see sample
-            List<ch.systemsx.cisd.openbis.generic.shared.api.v1.dto.Sample> samples =
-                openbis.getParentsBySearchService(sampleCode);
-            if (samples.isEmpty() || !spaces.contains(samples.get(0).getSpaceCode())) {
-              LOG.error("User tried searching for " + sampleCode
-                  + ", but sample does not exist in openBIS or they are not part of this project.");
+            if (!userIsAuthorized(sampleCode)) {
               throw new Exception("ID not found");
             }
 
