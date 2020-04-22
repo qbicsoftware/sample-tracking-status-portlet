@@ -127,14 +127,14 @@ public class StatusPortlet extends QBiCPortletUI {
   }
 
   private boolean userIsAuthorized(String sampleCode) {
-    List<ch.systemsx.cisd.openbis.generic.shared.api.v1.dto.Sample> samples =
-        openbis.getParentsBySearchService(sampleCode);
+    List<ch.ethz.sis.openbis.generic.asapi.v3.dto.sample.Sample> samples =
+        openbis.searchSampleByCode(sampleCode);
     if (samples.isEmpty()) {
       LOG.error(
           "User tried searching for " + sampleCode + ", but sample does not exist in openBIS");
       return false;
     }
-    if (!spaces.contains(samples.get(0).getSpaceCode())) {
+    if (!spaces.contains(samples.get(0).getSpace().getCode())) {
       LOG.error("User tried searching for " + sampleCode
           + ", but user is not allowed to view this project.");
       return false;
