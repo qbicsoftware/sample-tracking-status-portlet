@@ -102,7 +102,7 @@ public class StatusPortlet extends QBiCPortletUI {
     try {
       LOG.info("Trying to connect to openBIS");
       this.openbis = new OpenBisClient(confManager.getDataSourceUser(),
-          confManager.getDataSourcePassword(), confManager.getDataSourceUrl());
+          confManager.getDataSourcePassword(), confManager.getDataSourceApiUrl());
       this.openbis.login();
       LOG.info("Fetching user spaces for " + userID);
       spaces.addAll(openbis.getUserSpaces(userID));
