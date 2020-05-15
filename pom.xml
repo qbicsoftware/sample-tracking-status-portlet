@@ -8,9 +8,8 @@
 		<artifactId>portlet-parent-pom</artifactId>
 		<version>1.4.0</version>
 	</parent>
-	<groupId>life.qbic</groupId>
 	<artifactId>sample-tracking-status-portlet</artifactId>
-	<version>1.1.0-SNAPSHOT</version>
+	<version>1.1.0</version>
 	<name>Sample Tracking Status</name>
 	<url>http://github.com/qbicsoftware/sample-tracking-status-portlet</url>
 	<description>UI to query sample status and information</description>
@@ -67,18 +66,15 @@
 			<artifactId>data-model-lib</artifactId>
 			<version>1.7.0</version>
 		</dependency>
-
-
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.9.9</version>
+			<version>2.9.10.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
 			<version>4.5.9</version>
 		</dependency>
-		
 	</dependencies>
 </project>
