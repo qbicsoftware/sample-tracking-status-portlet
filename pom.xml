@@ -9,7 +9,7 @@
 		<version>1.4.0</version>
 	</parent>
 	<artifactId>sample-tracking-status-portlet</artifactId>
-	<version>1.0.0</version>
+	<version>1.1.0</version>
 	<name>Sample Tracking Status</name>
 	<url>http://github.com/qbicsoftware/sample-tracking-status-portlet</url>
 	<description>UI to query sample status and information</description>
@@ -53,6 +53,11 @@
 		<dependency>
 			<groupId>life.qbic</groupId>
 			<artifactId>core-utils-lib</artifactId>
+			<version>1.3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>life.qbic</groupId>
+			<artifactId>openbis-client-lib</artifactId>
 			<version>1.3.0</version>
 		</dependency>
 		<!-- for access to endpoints -->
